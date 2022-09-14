@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateBestCoursesTable extends Migration
+class CreateTempCoursesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,11 @@ class CreateBestCoursesTable extends Migration
      */
     public function up()
     {
-        Schema::create('best_courses', function (Blueprint $table) {
+        Schema::create('temp_courses', function (Blueprint $table) {
             $table->id();
             $table->integer('send_currency');
             $table->integer('receive_currency');
-            $table->decimal('rate', 20, 10);  
-            $table->timestamps();
+            $table->decimal('rate', 20, 10);       
         });
     }
 
@@ -29,6 +28,6 @@ class CreateBestCoursesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('best_courses');
+        Schema::dropIfExists('temp_courses');
     }
 }

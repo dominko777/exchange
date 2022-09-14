@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;  
 use GuzzleHttp\Client;
 use ZipArchive;
+use Illuminate\Support\Facades\DB;
 
 class ParseBestChange 
 {
@@ -58,17 +59,50 @@ class ParseBestChange
         }  
     }
 
-    public function findBestRates() {
+    public static function findBestRates() {
+        self::createTempRates();
+        self::createBestRates();     
+    }
+
+    public static function createTempRates() {     
         $storageDestinationPath = Storage::disk('local')->path(self::LOCAL_DIR . '/unzip/bm_rates.dat');
-        if (\File::exists( $storageDestinationPath)) {
-            $file = fopen(, "r");
+        if (\File::exists($storageDestinationPath)) {
+            $file = fopen($storageDestinationPath, "r"); 
             while(!feof($file)) {
                 $info = explode(';', fgets($file));   
-                Log::info(implode(' ', $info));           
+                DB::table('temp_courses')->updateOrInsert(
+                    [
+                        'send_currency' => $info[0],
+                        'receive_currency' => $info[1],
+                    ],
+                    [
+                        'rate' => $info[4] / $info[3],
+                    ]   
+                );    
+
             }    
 
             fclose($file);
-        }
+        }  
+    }      
+
+    public static function createBestRates() {
+        $maxRateCourses = DB::table('temp_courses')
+            ->select('send_currency', 'receive_currency', DB::raw('MAX(rate) as max_rate'))
+            ->groupBy('send_currency', 'receive_currency')->get();   
+        foreach ($maxRateCourses as $course) {
+            DB::table('best_courses')->updateOrInsert(
+                    [
+                        'send_currency' => $course->send_currency,
+                        'receive_currency' => $course->receive_currency,
+                    ],
+                    [
+                        'rate' => $course->max_rate,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]        
+                );    
+        }       
     }
     
 }
